@@ -1,6 +1,14 @@
 {
     "rewrites": [
         {
+            "source": "/health",
+            "destination": "https://omr-scanner-backend-6x6b.onrender.com/health"
+        },
+        {
+            "source": "/scan-test",
+            "destination": "https://omr-scanner-backend-6x6b.onrender.com/scan-test"
+        },
+        {
             "source": "/scan",
             "destination": "https://omr-scanner-backend-6x6b.onrender.com/scan"
         },
