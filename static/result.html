@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMR Evaluation Report — Manchester Technologies</title>
+    <meta name="description" content="Detailed OMR Evaluation Report showing student details, exam performance, and question-wise results.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css?v=3.1">
+</head>
+
+<body class="result-page-body">
+    <div class="page-container">
+        <!-- BRAND HEADER -->
+        <header class="main-header">
+            <div class="brand-info">
+                <img src="/static/logo.jpg?v=3.5" alt="Manchester Technologies Logo" class="brand-logo-img">
+                <div>
+                    <h1>Manchester Technologies</h1>
+                    <p>Optical Mark Recognition System — Student Report</p>
+                </div>
+            </div>
+            <a href="/" class="nav-back-btn">← Back to Scanner</a>
+        </header>
+
+        <!-- MAIN REPORT CARD -->
+        <main class="main-card report-card">
+            <!-- LOADING STATE -->
+            <div id="reportLoading" class="loading-container">
+                <div class="loading-spinner"></div>
+                <span>Loading OMR Result Report...</span>
+            </div>
+
+            <!-- ERROR STATE -->
+            <div id="reportError" class="error-banner hidden"></div>
+
+            <!-- REPORT CONTENT -->
+            <div id="reportContent" class="report-content hidden">
+                <div class="card-title-bar report-title-bar">
+                    <div>
+                        <h2>Student OMR Performance Report</h2>
+                        <p id="reportTimestamp" class="sub-text">Evaluated OMR Record</p>
+                    </div>
+                    <div id="scoreBadge" class="score-badge">
+                        <span class="score-lbl">TOTAL SCORE</span>
+                        <strong id="totalScore">-</strong>
+                    </div>
+                </div>
+
+                <!-- STUDENT & EXAM DETAILS GRID -->
+                <div class="report-meta-grid">
+                    <!-- STUDENT DETAILS CARD -->
+                    <div class="meta-section-card">
+                        <h3>👤 Student Details</h3>
+                        <div class="meta-details-list">
+                            <div class="meta-item">
+                                <span class="lbl">Student Name</span>
+                                <strong id="studentName">-</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="lbl">Roll Number</span>
+                                <strong id="rollNumber">-</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="lbl">Class</span>
+                                <strong id="className">-</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="lbl">Section</span>
+                                <strong id="sectionName">-</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="lbl">Batch</span>
+                                <strong id="batchName">-</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EXAM DETAILS CARD -->
+                    <div class="meta-section-card">
+                        <h3>📋 Exam Details</h3>
+                        <div class="meta-details-list">
+                            <div class="meta-item">
+                                <span class="lbl">Exam Type</span>
+                                <strong id="examType">-</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="lbl">Paper / Series</span>
+                                <strong id="paperSeries">-</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="lbl">Paper Code</span>
+                                <strong id="paperCode">-</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="lbl">Exam Date</span>
+                                <strong id="examDate">-</strong>
+                            </div>
+                            <div class="meta-item">
+                                <span class="lbl">Session</span>
+                                <strong id="examSession">-</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PERFORMANCE SUMMARY TILES -->
+                <section class="results-container report-metrics-section">
+                    <div class="results-header">
+                        <h3>Performance Breakdown</h3>
+                    </div>
+
+                    <div class="metrics-tiles-row">
+                        <div class="tile ok-tile">
+                            <span class="t-lbl">CORRECT</span>
+                            <strong id="metricCorrect">0</strong>
+                        </div>
+                        <div class="tile danger-tile">
+                            <span class="t-lbl">WRONG</span>
+                            <strong id="metricWrong">0</strong>
+                        </div>
+                        <div class="tile warn-tile">
+                            <span class="t-lbl">BLANK</span>
+                            <strong id="metricBlank">0</strong>
+                        </div>
+                        <div class="tile info-tile">
+                            <span class="t-lbl">MULTIPLE</span>
+                            <strong id="metricMultiple">0</strong>
+                        </div>
+                        <div class="tile muted-tile">
+                            <span class="t-lbl">UNCERTAIN</span>
+                            <strong id="metricUncertain">0</strong>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- QUESTION-WISE REPORT -->
+                <section class="question-report-section">
+                    <div class="results-header">
+                        <h3>Question-Wise Answer Sheet</h3>
+                    </div>
+
+                    <div class="table-responsive-wrapper">
+                        <table class="question-table">
+                            <thead>
+                                <tr>
+                                    <th>Question</th>
+                                    <th>Marked Answer</th>
+                                    <th>Correct Answer</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="questionTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        "use strict";
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const reportLoading = document.getElementById("reportLoading");
+            const reportError = document.getElementById("reportError");
+            const reportContent = document.getElementById("reportContent");
+
+            function showError(msg) {
+                if (reportLoading) reportLoading.classList.add("hidden");
+                if (reportContent) reportContent.classList.add("hidden");
+                if (reportError) {
+                    reportError.textContent = msg;
+                    reportError.classList.remove("hidden");
+                }
+            }
+
+            // Extract Result ID from path or URL params
+            let resultId = null;
+            const pathParts = window.location.pathname.split("/").filter(Boolean);
+            if (pathParts.length >= 2 && pathParts[0] === "result" && /^\d+$/.test(pathParts[1])) {
+                resultId = pathParts[1];
+            } else {
+                const searchParams = new URLSearchParams(window.location.search);
+                resultId = searchParams.get("id");
+            }
+
+            if (!resultId) {
+                showError("No valid Result ID provided in URL.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/omr-results/${resultId}`);
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error("Result record not found in database.");
+                    }
+                    throw new Error("Failed to load result from database.");
+                }
+
+                const data = await response.json();
+
+                // Populate Student Details
+                document.getElementById("studentName").textContent = data.student?.name || "Student";
+                document.getElementById("rollNumber").textContent = data.student?.roll_number || "-";
+                document.getElementById("className").textContent = data.student?.class || "-";
+                document.getElementById("sectionName").textContent = data.student?.section || "-";
+                document.getElementById("batchName").textContent = data.student?.batch || "-";
+
+                // Populate Exam Details
+                document.getElementById("examType").textContent = (data.exam?.type || "OMR Exam").toUpperCase();
+                document.getElementById("paperSeries").textContent = data.exam?.paper_series || data.exam?.paper_code || "-";
+                document.getElementById("paperCode").textContent = data.exam?.paper_code || "-";
+                document.getElementById("examDate").textContent = data.exam?.exam_date ? new Date(data.exam.exam_date).toLocaleDateString() : "-";
+                document.getElementById("examSession").textContent = data.exam?.session || "-";
+
+                // Populate Performance Summary
+                const perf = data.performance || {};
+                document.getElementById("totalScore").textContent = perf.score ?? "-";
+                document.getElementById("metricCorrect").textContent = perf.correct ?? 0;
+                document.getElementById("metricWrong").textContent = perf.wrong ?? 0;
+                document.getElementById("metricBlank").textContent = perf.blank ?? 0;
+                document.getElementById("metricMultiple").textContent = perf.multiple ?? 0;
+                document.getElementById("metricUncertain").textContent = perf.uncertain ?? 0;
+
+                if (data.created_at) {
+                    document.getElementById("reportTimestamp").textContent = `Evaluated on ${new Date(data.created_at).toLocaleString()}`;
+                }
+
+                // Populate Question-wise Table
+                const tbody = document.getElementById("questionTableBody");
+                const questions = data.questions || [];
+
+                if (!questions.length) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">No question details available.</td></tr>`;
+                } else {
+                    tbody.innerHTML = questions.map((q) => {
+                        const status = (q.status || "blank").toLowerCase();
+                        let statusBadgeClass = "q-status-blank";
+                        let statusText = "Blank";
+
+                        if (status === "correct") {
+                            statusBadgeClass = "q-status-correct";
+                            statusText = "Correct";
+                        } else if (status === "incorrect" || status === "wrong") {
+                            statusBadgeClass = "q-status-wrong";
+                            statusText = "Incorrect";
+                        } else if (status === "multiple") {
+                            statusBadgeClass = "q-status-multiple";
+                            statusText = "Multiple";
+                        } else if (status === "uncertain") {
+                            statusBadgeClass = "q-status-uncertain";
+                            statusText = "Uncertain";
+                        }
+
+                        const marked = q.marked_answer ? q.marked_answer : "—";
+                        const correctAns = q.correct_answer ? q.correct_answer : "—";
+
+                        return `
+                            <tr>
+                                <td><strong>Q${q.question_number}</strong></td>
+                                <td><span class="answer-chip marked-chip">${marked}</span></td>
+                                <td><span class="answer-chip correct-chip">${correctAns}</span></td>
+                                <td><span class="status-pill ${statusBadgeClass}">${statusText}</span></td>
+                            </tr>
+                        `;
+                    }).join("");
+                }
+
+                // Show Content
+                reportLoading.classList.add("hidden");
+                reportContent.classList.remove("hidden");
+
+            } catch (err) {
+                console.error("Result Page Error:", err);
+                showError(err.message || "Could not load report details.");
+            }
+        });
+    </script>
+</body>
+
+</html>

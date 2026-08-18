@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMR Evaluation Dashboard — Manchester Technologies</title>
+    <meta name="description"
+        content="Manchester Technologies OMR Evaluation System — Simple Single-Page OMR Scanner with Stream Selection and Flashlight support.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css?v=3.0">
+</head>
+
+<body>
+    <div class="page-container">
+        <!-- BRAND HEADER -->
+        <header class="main-header">
+            <div class="brand-info">
+                <img src="/static/logo.jpg?v=3.5" alt="Manchester Technologies Logo" class="brand-logo-img">
+                <div>
+                    <h1>Manchester Technologies</h1>
+                    <p>Optical Mark Recognition System</p>
+                </div>
+            </div>
+            <div class="online-status">
+                <span class="pulse-dot"></span> SCANNER ONLINE
+            </div>
+        </header>
+
+        <!-- MAIN EVALUATION CARD -->
+        <main class="main-card">
+            <div class="card-title-bar">
+                <h2>Scan & Evaluate OMR Sheet</h2>
+                <p>Select your exam type and upload or capture an OMR sheet.</p>
+            </div>
+
+            <!-- EXAM SELECTION & KCET STREAM OPTIONS -->
+            <div class="form-section">
+                <div class="field-box">
+                    <label for="exam">TARGET EXAM</label>
+                    <select id="exam">
+                        <option value="kcet" selected>KCET (Karnataka CET)</option>
+                        <option value="neet">NEET (Medical Entrance — 180Q)</option>
+                        <option value="jee">JEE (Engineering Entrance)</option>
+                    </select>
+                </div>
+
+                <!-- KCET STREAM SELECTOR (PCMB vs PCM) -->
+                <div id="kcetStreamSection" class="field-box stream-box">
+                    <label>KCET STREAM SELECTOR</label>
+                    <div class="stream-btn-group">
+                        <button id="streamPcmbBtn" type="button" class="stream-btn active" data-stream="pcmb">
+                            PCMB (240 Questions)
+                        </button>
+                        <button id="streamPcmBtn" type="button" class="stream-btn" data-stream="pcm">
+                            PCM (180 Questions — No Bio)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SCANNER ACTION BUTTONS -->
+            <div class="actions-group">
+                <button id="openCameraButton" type="button" class="action-btn camera-btn">
+                    <span>📷</span> Live Camera Scan
+                </button>
+                <label for="imageUpload" class="action-btn upload-btn">
+                    <span>📁</span> Upload OMR Image
+                </label>
+                <input id="imageUpload" type="file" accept="image/jpeg,image/png" hidden>
+            </div>
+
+            <!-- LIVE CAMERA PREVIEW & TORCH -->
+            <div id="cameraContainer" class="camera-preview-wrapper hidden">
+                <video id="camera" autoplay playsinline muted></video>
+                <canvas id="documentBoundaryOverlay" class="document-overlay" aria-hidden="true"></canvas>
+
+                <!-- FLASHLIGHT / TORCH TOGGLE BUTTON -->
+                <button id="torchButton" type="button" class="torch-btn hidden" title="Toggle Flashlight / Torch">
+                    <span class="torch-icon">⚡ Torch OFF</span>
+                </button>
+
+                <div id="cornerDetectionStatus" class="detection-status-badge">
+                    Looking for four corner blocks…
+                </div>
+            </div>
+
+            <!-- HIDDEN CAPTURE CANVAS -->
+            <canvas id="captureCanvas" class="hidden"></canvas>
+
+            <!-- CAPTURED IMAGE PREVIEW & SCANNING LASER LINE -->
+            <div id="previewContainer" class="preview-container hidden">
+                <div id="scanLaserLine" class="scan-laser-line hidden"></div>
+                <img id="capturedPreview" class="preview-img" alt="OMR Preview Image">
+            </div>
+
+            <!-- CAMERA CONTROLS -->
+            <div class="controls-bar">
+                <button id="captureButton" type="button" class="control-btn capture-btn hidden">
+                    ⚡ Capture OMR
+                </button>
+                <button id="retakeButton" type="button" class="control-btn retake-btn hidden">
+                    🔄 Retake / Upload Another
+                </button>
+                <button id="scanButton" type="button" class="control-btn scan-btn hidden">
+                    ✨ Scan & Evaluate Sheet
+                </button>
+            </div>
+
+            <!-- LOADING SPINNER -->
+            <div id="loading" class="loading-container hidden">
+                <div class="loading-spinner"></div>
+                <span id="loadingText">Processing OMR Sheet...</span>
+            </div>
+
+            <!-- ERROR ALERT -->
+            <div id="error" class="error-banner hidden"></div>
+
+            <!-- SUCCESS STATE -->
+            <section id="successState" class="success-state hidden" aria-live="polite">
+                <div class="success-icon">✓</div>
+                <div>
+                    <h3>OMR Scanned Successfully</h3>
+                    <div class="success-summary-line">
+                        <span>Exam: <strong id="successExam">NEET</strong></span> | 
+                        <span>Paper: <strong id="successPaper">B127</strong></span> | 
+                        <span>Score: <strong id="successScore">0</strong></span>
+                    </div>
+                </div>
+                <button id="viewResultButton" type="button" class="success-action-btn">View Result</button>
+            </section>
+
+            <!-- EVALUATION RESULTS DISPLAY SECTION -->
+            <section id="resultSection" class="results-container hidden">
+                <div class="results-header">
+                    <h3>Evaluation Summary</h3>
+                </div>
+
+                <div class="summary-tiles-row">
+                    <div class="tile gold-tile">
+                        <span class="t-lbl">TOTAL SCORE</span>
+                        <strong id="score" class="t-val">-</strong>
+                    </div>
+                    <div class="tile">
+                        <span class="t-lbl">EXAM</span>
+                        <strong id="resultExam" class="t-val">-</strong>
+                    </div>
+                    <div class="tile">
+                        <span class="t-lbl">STREAM</span>
+                        <strong id="resultStream" class="t-val">PCMB</strong>
+                    </div>
+                    <div class="tile">
+                        <span class="t-lbl">PAPER / SERIES</span>
+                        <strong id="paperCode" class="t-val">-</strong>
+                    </div>
+                </div>
+
+                <div class="metrics-tiles-row">
+                    <div class="tile ok-tile">
+                        <span class="t-lbl">CORRECT</span>
+                        <strong id="correct" class="t-val">0</strong>
+                    </div>
+                    <div class="tile danger-tile">
+                        <span class="t-lbl">WRONG</span>
+                        <strong id="wrong" class="t-val">0</strong>
+                    </div>
+                    <div class="tile warn-tile">
+                        <span class="t-lbl">BLANK</span>
+                        <strong id="blank" class="t-val">0</strong>
+                    </div>
+                    <div class="tile info-tile">
+                        <span class="t-lbl">MULTIPLE</span>
+                        <strong id="multiple" class="t-val">0</strong>
+                    </div>
+                    <div class="tile muted-tile">
+                        <span class="t-lbl">UNCERTAIN</span>
+                        <strong id="uncertain" class="t-val">0</strong>
+                    </div>
+                </div>
+
+                <div id="quality" class="quality-info"></div>
+                <div id="message" class="message-info"></div>
+
+                <!-- EVALUATED OMR BUBBLE ANALYSIS DISPLAY CARD -->
+                <div id="bubbleAnalysisCard" class="bubble-analysis-card hidden">
+                    <div class="bubble-analysis-title-bar">
+                        <h4>🔍 Evaluated OMR Sheet Analysis (Tap image to zoom full screen)</h4>
+                        <p>Visual overlay displaying all detected bubbles, answer keys, and grid alignment.</p>
+                    </div>
+                    <div class="bubble-analysis-img-wrapper" style="cursor: zoom-in;">
+                        <img id="bubbleDebugPreview" class="preview-img bubble-debug-img"
+                            alt="Evaluated OMR Bubble Analysis">
+                    </div>
+                </div>
+            </section>
+
+            <section id="dashboardSection" class="dashboard-panel hidden">
+                <div class="dashboard-header">
+                    <div>
+                        <p class="eyebrow">Teacher Dashboard</p>
+                        <h3>Performance Overview</h3>
+                    </div>
+                    <div class="dashboard-filters">
+                        <label>
+                            <span>Class</span>
+                            <select id="classFilter">
+                                <option value="all">All Classes</option>
+                                <option value="10">Class 10</option>
+                                <option value="11">Class 11</option>
+                                <option value="12">Class 12</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Section</span>
+                            <select id="sectionFilter">
+                                <option value="all">All Sections</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Exam</span>
+                            <select id="examDashboardFilter">
+                                <option value="all">All Exams</option>
+                                <option value="NEET">NEET</option>
+                                <option value="KCET">KCET</option>
+                                <option value="JEE">JEE</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="dashboardSummary" class="dashboard-summary"></div>
+                <div class="dashboard-table-wrap">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Class</th>
+                                <th>Section</th>
+                                <th>Exam</th>
+                                <th>Score</th>
+                                <th>Correct</th>
+                                <th>Wrong</th>
+                                <th>Blank</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboardTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- FULLSCREEN IMAGE LIGHTBOX MODAL -->
+    <div id="imageLightbox" class="lightbox-modal hidden">
+        <span class="lightbox-close" id="lightboxClose">&times;</span>
+        <div class="lightbox-content-wrapper">
+            <img id="lightboxImg" class="lightbox-img" alt="Full Resolution View">
+        </div>
+    </div>
+
+    <script src="/static/app.js?v=3.0"></script>
+</body>
+
+</html>
