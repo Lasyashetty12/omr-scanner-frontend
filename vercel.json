@@ -1,0 +1,12 @@
+{
+    "rewrites": [
+        {
+            "source": "/scan",
+            "destination": "https://omr-scanner-backend-6x6b.onrender.com/scan"
+        },
+        {
+            "source": "/api/:path*",
+            "destination": "https://omr-scanner-backend-6x6b.onrender.com/api/:path*"
+        }
+    ]
+}
