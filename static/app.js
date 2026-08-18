@@ -2283,16 +2283,12 @@ async function scanOMR() {
 
         const response =
             await fetch(
-                "/scan",
+                "https://omr-scanner-backend-6x6b.onrender.com/scan",
                 {
-                    method:
-                        "POST",
-
-                    body:
-                        formData
+                    method: "POST",
+                    body: formData
                 }
             );
-
 
         const data =
             await readServerResponse(
